@@ -1,75 +1,68 @@
-# HomeFit Backend (skeleton)
+# Quaake — HomeFit
 
-Java 21 · Spring Boot 4.0.6 · Spring Modulith 2.0.6 · PostgreSQL/PostGIS · Maven.
+> *Don't just find a house — understand the life around it.*
 
-A **modular monolith** — one Spring Boot app, three Spring Modulith modules:
+A property/home-finding platform that scores places by the **life around them** — flood and disaster risk, environment, proximity to schools/markets/worship/healthcare, safety, and affordability — against **each person's own priorities**, producing a personalized **Fit Score**. Calm to use, gently gamified. **Nigeria-first, built to scale worldwide.**
 
-```
-com.homefit
-├── core/        shared domain + scoring  (no web; depends on nothing)
-│   ├── domain/      Dimension, SourceTier, DimensionScore, UserWeights, FitResult, ...
-│   ├── scoring/     ScoringMath, ScoringThresholds
-│   │   ├── normalize/   Flood/Proximity/Price/AirQuality/Safety/Hazard normalizers  [offline]
-│   │   └── aggregate/   WeightedAggregator, HardFilterEvaluator, ConfidenceCalculator [request-time]
-│   └── geo/         H3Support (h3-java), DistanceUtils
-├── ingestion/   background pipeline (depends only on core)
-│   ├── adapter/     SourceAdapter
-│   └── pipeline/    SubScoreComputeJob (@Scheduled, profile "worker")
-└── api/         request-time HTTP (depends only on core)
-    ├── scoring/     ScoreController (/api/v1/score/demo — wired to the real engine)
-    └── properties/  PropertyController (/api/v1/properties/sample — stub)
-```
+---
 
-Boundaries are enforced by `ModularityTests` (`ApplicationModules.verify()`).
+## Repository layout — branch per area
 
-## Prerequisites
-- JDK 21+, Maven 3.9+
-- A PostGIS database. Quick start:
+| Branch | Purpose |
+|---|---|
+| **`main`** | 📖 Documentation & entry point — the complete design blueprint (this branch) |
+| **`backend`** | ☕ Java 21 · Spring Boot 4 · Spring Modulith modular monolith |
+| **`frontend`** | 🟢 Nuxt 4 · Vue 3 app *(in progress)* |
 
 ```bash
-docker run --name homefit-db -e POSTGRES_DB=homefit \
-  -e POSTGRES_USER=homefit -e POSTGRES_PASSWORD=homefit \
-  -p 5432:5432 -d postgis/postgis:16-3.4
+git checkout backend    # the API / scoring / ingestion code
+git checkout frontend   # the Nuxt app
+git checkout main        # these docs
 ```
 
-## Run
-```bash
-mvn spring-boot:run                                   # api (default)
-mvn spring-boot:run -Dspring-boot.run.profiles=worker # scheduled ingestion
+> The design blueprint lives only on `main` so there's one source of truth; the code branches reference it here.
 
-# verify boundaries + run unit tests
-mvn test
-```
+---
 
-Flyway applies `src/main/resources/db/migration/V1..V6` on startup, creating the
-`ingest` and `app` schemas. Override DB connection with `DB_URL`/`DB_USER`/`DB_PASSWORD`.
+## Start here
 
-## Try the scoring engine (the spec's worked example -> 83)
-```bash
-curl -s localhost:8080/api/v1/score/demo -H 'Content-Type: application/json' -d '{
-  "weights":[
-    {"dimension":"flood","weight":0.30},{"dimension":"schools","weight":0.25},
-    {"dimension":"affordability","weight":0.20},{"dimension":"worship","weight":0.15},
-    {"dimension":"air_quality","weight":0.10}],
-  "subScores":[
-    {"dimension":"flood","subScore":74,"confidence":1.0,"sourceTier":"measured"},
-    {"dimension":"schools","subScore":100,"confidence":1.0,"sourceTier":"measured"},
-    {"dimension":"affordability","subScore":65,"confidence":1.0,"sourceTier":"measured"},
-    {"dimension":"worship","subScore":100,"confidence":1.0,"sourceTier":"measured"},
-    {"dimension":"air_quality","subScore":79,"confidence":1.0,"sourceTier":"measured"}]
-}'
-# -> {"score":83,"confidence":1.0,"breakdown":[...]}
-```
+1. Read **`design-blueprint/README.md`** — it orchestrates every spec and explains how they connect.
+2. Open the prototypes in **`design-blueprint/prototypes/`** in a browser to see the UI working.
+3. Switch to `backend` or `frontend` to build.
 
-## What's real vs. stubbed
-- **Real:** module structure + boundary test, all Flyway migrations (full schema), the scoring
-  primitives + every normalizer + the weighted aggregator (verified by `ScoringSmokeTest`).
-- **Stubbed / next:** JPA read-model entities over `ingest.*`, the production endpoints
-  (`/properties/search`, `/properties/{id}`, `/fit`), the source adapters, and the
-  sub-score compute job body.
+## The design blueprint (`design-blueprint/`)
 
-## Next step — one vertical data slice
-Ingest NASA POWER + a flood layer + OSM amenities for one Lagos region, aggregate to H3 cells,
-run the normalizers, populate `ingest.cell_subscore`, then back the API endpoints with it.
+- **`01-vision-ux/`** — UX flow (the five screens) and the app breadth map (what's deferred).
+- **`02-data-scoring/`** — data-source matrix (NASA/OSM/…, with Nigeria coverage) and the Fit Score normalization spec.
+- **`03-architecture-backend/`** — system architecture, backend (Spring modular monolith) design, full PostGIS schema, REST API surface, and auth/security.
+- **`04-frontend/`** — design system + Nuxt 4 architecture.
+- **`prototypes/`** — five clickable HTML screens.
 
-See the design blueprint (`homefit-design-blueprint.zip`) for the full specs.
+---
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Backend | Java 21 · Spring Boot 4.0.6 · Spring Modulith 2.0.6 · Maven |
+| Modules | `core` (scoring) · `ingestion` (sourcing + precompute) · `api` (serving) |
+| Data | PostgreSQL + PostGIS, H3 grid; Redis cache |
+| Frontend | Nuxt 4 / Vue 3 · TypeScript · Pinia · MapLibre GL |
+| Principle | Precompute offline, personalize at request time |
+
+## Status
+
+| Piece | State |
+|---|---|
+| Design blueprint (specs + prototypes) | ✅ Complete (`main`) |
+| Backend skeleton (modules, migrations, scoring engine, tests) | ✅ On `backend` |
+| Live data ingestion | ⬜ Next |
+| Nuxt app | ⬜ Next (`frontend`) |
+
+## Way forward
+
+1. One **vertical data slice** on `backend` — ingest NASA POWER + a flood layer + OSM amenities for one Lagos region, run the normalizers, populate `cell_subscore`.
+2. Back the API endpoints (`/properties/search`, `/{id}`, `/fit`) with that real read model.
+3. Build the Nuxt screens on `frontend`, consuming the API, styled from the design system.
+
+See `design-blueprint/README.md` for the full reading order and rationale.
