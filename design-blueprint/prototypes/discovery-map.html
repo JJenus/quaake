@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Discover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#F4F1EA;font-family:'Hanken Grotesk',sans-serif;color:#2A2A24;
+    display:flex;justify-content:center;min-height:100vh;}
+  .grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.45;mix-blend-mode:multiply;z-index:50;}
+  .phone{width:100%;max-width:430px;background:#F4F1EA;position:relative;min-height:100vh;
+    box-shadow:0 0 80px rgba(42,42,36,.08);display:flex;flex-direction:column;overflow:hidden;}
+
+  /* header */
+  .head{padding:50px 22px 12px;display:flex;align-items:center;justify-content:space-between;z-index:20;}
+  .head .loc .lbl{font-weight:500;font-size:11.5px;color:#9A9A8C;letter-spacing:.3px;}
+  .head .loc h1{font-family:'Fraunces',serif;font-weight:500;font-size:26px;letter-spacing:-.4px;display:flex;align-items:center;gap:6px;}
+  .toggle{display:flex;background:rgba(42,42,36,.06);border-radius:13px;padding:4px;}
+  .toggle button{border:none;background:none;padding:8px 14px;border-radius:10px;cursor:pointer;
+    font-weight:600;font-size:13px;color:#8A8578;transition:all .2s ease;display:flex;align-items:center;gap:6px;}
+  .toggle button.on{background:#FBFAF6;color:#2F4A3C;box-shadow:0 1px 4px rgba(42,42,36,.08);}
+
+  /* filters */
+  .filters{display:flex;gap:8px;padding:4px 22px 14px;overflow-x:auto;z-index:20;}
+  .filters::-webkit-scrollbar{display:none;}
+  .fchip{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;
+    background:#FBFAF6;border:1px solid rgba(42,42,36,.08);font-weight:600;font-size:12.5px;color:#4A4A40;}
+  .fchip.sort{background:#2F4A3C;color:#F4F1EA;border:none;}
+  .fchip .x{cursor:pointer;display:grid;place-items:center;opacity:.55;}
+  .fchip .x:hover{opacity:1;}
+
+  /* content */
+  .content{flex:1;position:relative;}
+
+  /* MAP */
+  #map-view{position:absolute;inset:0;}
+  #map-view svg.basemap{position:absolute;inset:0;width:100%;height:100%;}
+  .pin{position:absolute;transform:translate(-50%,-100%) scale(0);transform-origin:bottom center;
+    cursor:pointer;transition:transform .45s cubic-bezier(.2,.8,.2,1);}
+  .pin.in{transform:translate(-50%,-100%) scale(1);}
+  .pin .bubble{min-width:40px;height:40px;padding:0 7px;border-radius:999px;display:flex;align-items:center;
+    justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:#fff;
+    box-shadow:0 5px 14px rgba(36,58,47,.28);border:2.5px solid #FBFAF6;}
+  .pin .tip{width:10px;height:10px;background:inherit;}
+  .pin .stem{width:2px;height:9px;margin:0 auto;background:rgba(42,42,36,.25);}
+  .pin.sel{z-index:10;}
+  .pin.sel .bubble{transform:scale(1.12);}
+
+  /* bottom sheet */
+  .sheet{position:absolute;left:14px;right:14px;bottom:18px;background:#FBFAF6;border-radius:22px;
+    padding:16px;box-shadow:0 14px 40px rgba(36,58,47,.18);border:1px solid rgba(42,42,36,.06);
+    transform:translateY(160%);transition:transform .45s cubic-bezier(.2,.8,.2,1);z-index:15;}
+  .sheet.show{transform:none;}
+  .sheet .srow{display:flex;align-items:center;gap:14px;}
+  .sheet .sthumb{width:62px;height:62px;border-radius:16px;flex-shrink:0;}
+  .sheet .sname{font-family:'Fraunces',serif;font-weight:600;font-size:17px;}
+  .sheet .sarea{font-weight:500;font-size:12px;color:#9A9A8C;margin-top:1px;}
+  .sheet .sprice{font-weight:600;font-size:13px;color:#6B6B5E;margin-top:6px;}
+  .sheet .sfit{margin-left:auto;text-align:center;}
+  .sheet .sfit .n{font-family:'Fraunces',serif;font-weight:600;font-size:26px;line-height:1;}
+  .sheet .sfit .l{font-weight:600;font-size:9px;color:#9A9A8C;text-transform:uppercase;letter-spacing:.5px;}
+  .sheet .sreason{margin-top:12px;font-weight:500;font-size:13px;color:#4A4A40;display:flex;align-items:center;gap:8px;}
+  .sheet .sreason .d{width:6px;height:6px;border-radius:9px;background:#5E8268;flex-shrink:0;}
+
+  /* LIST */
+  #list-view{position:absolute;inset:0;overflow-y:auto;padding:4px 18px 28px;display:none;}
+  #list-view.on{display:block;} #map-view.off{display:none;}
+  .card{background:#FBFAF6;border-radius:22px;overflow:hidden;border:1px solid rgba(42,42,36,.06);
+    box-shadow:0 3px 14px rgba(36,58,47,.05);margin-bottom:14px;
+    opacity:0;transform:translateY(16px);}
+  body.loaded .card{opacity:1;transform:none;transition:opacity .6s ease var(--d),transform .6s cubic-bezier(.2,.7,.2,1) var(--d);}
+  .card .photo{height:120px;position:relative;}
+  .card .fitbadge{position:absolute;top:12px;right:12px;width:50px;height:50px;border-radius:50%;
+    background:rgba(251,250,246,.92);backdrop-filter:blur(4px);display:grid;place-items:center;
+    box-shadow:0 4px 12px rgba(36,58,47,.18);}
+  .card .fitbadge .n{font-family:'Fraunces',serif;font-weight:600;font-size:20px;line-height:1;}
+  .card .fitbadge .l{font-size:7.5px;font-weight:700;color:#9A9A8C;letter-spacing:.4px;}
+  .card .body{padding:13px 15px 15px;}
+  .card .cname{font-family:'Fraunces',serif;font-weight:600;font-size:18px;}
+  .card .carea{font-weight:500;font-size:12px;color:#9A9A8C;margin-top:1px;}
+  .card .cprice{font-weight:600;font-size:13.5px;color:#2F4A3C;margin-top:7px;}
+  .card .reasons{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;}
+  .card .rchip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;
+    background:rgba(94,130,104,.10);font-weight:600;font-size:11px;color:#3A5A47;}
+  .card .rchip.warn{background:rgba(192,138,90,.12);color:#9C5F38;}
+  .card .conf{font-weight:500;font-size:11px;color:#B0907A;margin-top:9px;}
+
+  svg.ic{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+</style>
+</head>
+<body>
+<svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#g)" opacity="0.025"/></svg>
+
+<div class="phone">
+  <div class="head">
+    <div class="loc">
+      <div class="lbl">SHOWING MATCHES IN</div>
+      <h1><svg class="ic" width="18" height="18" stroke="#7C9885" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Lagos</h1>
+    </div>
+    <div class="toggle" id="toggle">
+      <button class="on" data-v="map"><svg class="ic" width="15" height="15" viewBox="0 0 24 24"><path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2z"/><path d="M9 3v16"/><path d="M15 5v16"/></svg>Map</button>
+      <button data-v="list"><svg class="ic" width="15" height="15" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>List</button>
+    </div>
+  </div>
+
+  <div class="filters" id="filters">
+    <span class="fchip sort"><svg class="ic" width="13" height="13" viewBox="0 0 24 24"><path d="M11 5h10"/><path d="M11 9h7"/><path d="M11 13h4"/><path d="m3 17 3 3 3-3"/><path d="M6 18V4"/></svg>Sort: Fit Score</span>
+    <span class="fchip">Under ₦85M<span class="x" data-x>×</span></span>
+    <span class="fchip">Low flood risk<span class="x" data-x>×</span></span>
+    <span class="fchip">Hospital &lt; 15km<span class="x" data-x>×</span></span>
+  </div>
+
+  <div class="content">
+    <!-- MAP VIEW -->
+    <div id="map-view">
+      <svg class="basemap" viewBox="0 0 390 620" preserveAspectRatio="xMidYMid slice">
+        <rect width="390" height="620" fill="#E9E3D4"/>
+        <!-- lagoon / water -->
+        <path d="M-20 380 C 80 340 160 420 250 390 C 320 365 380 410 410 380 L 410 640 L -20 640 Z" fill="#AEC7BE"/>
+        <path d="M-20 380 C 80 340 160 420 250 390 C 320 365 380 410 410 380" fill="none" stroke="#9BB8AE" stroke-width="2"/>
+        <!-- park blobs -->
+        <ellipse cx="70" cy="150" rx="55" ry="42" fill="#C9D6BE"/>
+        <ellipse cx="320" cy="230" rx="46" ry="38" fill="#C9D6BE"/>
+        <!-- roads -->
+        <g stroke="#DCD6C6" stroke-width="7" fill="none" stroke-linecap="round">
+          <path d="M20 90 C 140 120 180 250 200 380"/>
+          <path d="M360 70 C 280 160 250 250 250 380"/>
+          <path d="M0 250 L 390 220"/>
+          <path d="M40 470 C 150 440 260 470 380 450"/>
+        </g>
+        <g stroke="#EFEADB" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="2 7">
+          <path d="M20 90 C 140 120 180 250 200 380"/>
+          <path d="M0 250 L 390 220"/>
+        </g>
+      </svg>
+      <div id="pins"></div>
+      <div class="sheet" id="sheet">
+        <div class="srow">
+          <div class="sthumb" id="sh-thumb"></div>
+          <div>
+            <div class="sname" id="sh-name"></div>
+            <div class="sarea" id="sh-area"></div>
+            <div class="sprice" id="sh-price"></div>
+          </div>
+          <div class="sfit"><div class="n" id="sh-fit"></div><div class="l">Fit</div></div>
+        </div>
+        <div class="sreason"><span class="d"></span><span id="sh-reason"></span></div>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div id="list-view"></div>
+  </div>
+</div>
+
+<script>
+const scoreColor=s=>s>=80?"#5E8268":s>=70?"#7C9559":s>=60?"#A98B4E":"#C08A5A";
+const grad=(a,b)=>`linear-gradient(135deg,${a},${b})`;
+
+const PROPS=[
+  {name:"Lekki Phase 1",area:"Lagos",price:"₦75M – ₦85M",fit:83,x:64,y:55,
+   reasons:[["Low flood risk",0],["School 8 min",0]],g:["#3A5A47","#2F4A3C"]},
+  {name:"Ikoyi",area:"Lagos",price:"₦140M – ₦160M",fit:77,x:40,y:62,
+   reasons:[["Very safe from floods",0],["Clean air",0]],g:["#54707E","#3E5A66"]},
+  {name:"Yaba",area:"Lagos",price:"₦45M – ₦55M",fit:75,x:30,y:38,
+   reasons:[["Most affordable",0],["Central & connected",0]],g:["#A77B4E","#8A6238"]},
+  {name:"Surulere",area:"Lagos",price:"₦38M – ₦48M",fit:71,x:18,y:50,
+   reasons:[["Great markets nearby",0],["Good transit",0]],g:["#7C8A5A","#5E6B40"]},
+  {name:"Ajah",area:"Lagos",price:"₦30M – ₦40M",fit:68,x:80,y:42,partial:true,
+   reasons:[["Affordable & quiet",0],["Floods occasionally",1]],g:["#9A8A6E","#766850"]},
+];
+
+/* ---------- pins ---------- */
+const pinsEl=document.getElementById("pins");
+pinsEl.innerHTML=PROPS.map((p,i)=>`
+  <div class="pin" data-i="${i}" style="left:${p.x}%;top:${p.y}%">
+    <div class="bubble" style="background:${scoreColor(p.fit)}">${p.fit}</div>
+    <div class="stem"></div>
+  </div>`).join("");
+const pins=[...pinsEl.querySelectorAll(".pin")];
+
+/* ---------- bottom sheet ---------- */
+const sheet=document.getElementById("sheet");
+function openSheet(i){
+  const p=PROPS[i];
+  document.getElementById("sh-thumb").style.background=grad(...p.g);
+  document.getElementById("sh-name").textContent=p.name;
+  document.getElementById("sh-area").textContent=p.area;
+  document.getElementById("sh-price").textContent=p.price;
+  const f=document.getElementById("sh-fit"); f.textContent=p.fit; f.style.color=scoreColor(p.fit);
+  document.getElementById("sh-reason").textContent=p.reasons[0][0];
+  sheet.classList.add("show");
+  pins.forEach((pn,j)=>pn.classList.toggle("sel",j===i));
+}
+pins.forEach((pn)=>pn.addEventListener("click",()=>openSheet(+pn.dataset.i)));
+
+/* ---------- list ---------- */
+const listEl=document.getElementById("list-view");
+listEl.innerHTML=PROPS.map((p,i)=>`
+  <div class="card" style="--d:${i*0.08}s">
+    <div class="photo" style="background:${grad(...p.g)}">
+      <div class="fitbadge"><div><div class="n" data-fit="${p.fit}" style="color:${scoreColor(p.fit)}">0</div><div class="l">FIT</div></div></div>
+    </div>
+    <div class="body">
+      <div class="cname">${p.name}</div>
+      <div class="carea">${p.area}</div>
+      <div class="cprice">${p.price}</div>
+      <div class="reasons">${p.reasons.map(r=>`<span class="rchip ${r[1]?'warn':''}"><span style="width:5px;height:5px;border-radius:9px;background:currentColor;display:inline-block"></span>${r[0]}</span>`).join("")}</div>
+      ${p.partial?`<div class="conf">Fit ${p.fit} · based on partial data for this area</div>`:""}
+    </div>
+  </div>`).join("");
+
+/* ---------- view toggle ---------- */
+const mapView=document.getElementById("map-view"), listView=document.getElementById("list-view");
+document.querySelectorAll("#toggle button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#toggle button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  const map=b.dataset.v==="map";
+  mapView.classList.toggle("off",!map);
+  listView.classList.toggle("on",!map);
+  if(map) dropPins();
+}));
+
+/* ---------- filter chips ---------- */
+document.querySelectorAll("[data-x]").forEach(x=>x.addEventListener("click",e=>{
+  e.stopPropagation(); x.closest(".fchip").remove();
+}));
+
+/* ---------- animations ---------- */
+function dropPins(){ pins.forEach((pn,i)=>{ pn.classList.remove("in");
+  setTimeout(()=>pn.classList.add("in"), 120+i*90); }); }
+function countList(){
+  listEl.querySelectorAll(".n[data-fit]").forEach(el=>{
+    const target=+el.dataset.fit, dur=1100, start=performance.now()+200;
+    function tick(now){const t=Math.min(1,Math.max(0,(now-start)/dur));
+      el.textContent=Math.round(target*(1-Math.pow(1-t,3)));if(t<1)requestAnimationFrame(tick);}
+    requestAnimationFrame(tick);
+  });
+}
+window.addEventListener("load",()=>{
+  document.body.classList.add("loaded");
+  dropPins(); countList();
+  setTimeout(()=>openSheet(0),700); // preview the top match
+});
+</script>
+</body>
+</html>

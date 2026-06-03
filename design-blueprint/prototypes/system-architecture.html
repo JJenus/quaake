@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#F4F1EA;font-family:'Hanken Grotesk',sans-serif;color:#2A2A24;
+    display:flex;justify-content:center;min-height:100vh;}
+  .grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5;mix-blend-mode:multiply;z-index:0;}
+  .wrap{width:100%;max-width:760px;padding:48px 22px 60px;position:relative;z-index:1;}
+
+  header{margin-bottom:8px;}
+  .eyebrow{font-weight:600;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#7C9885;}
+  h1{font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.5px;margin:8px 0 8px;}
+  .lede{font-weight:500;font-size:15px;color:#6B6B5E;line-height:1.55;max-width:560px;}
+
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:22px 0 8px;}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-weight:500;font-size:12.5px;color:#6B6B5E;}
+  .legend i{width:18px;height:10px;border-radius:4px;display:inline-block;}
+  .l-bg{background:rgba(94,130,104,.25);border:1px solid #5E8268;}
+  .l-rt{background:rgba(192,138,90,.22);border:1px solid #C08A5A;}
+
+  .flow{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:14px;}
+  .layer{width:100%;background:#FBFAF6;border-radius:22px;padding:18px 18px 16px;
+    border:1px solid rgba(42,42,36,.07);box-shadow:0 3px 14px rgba(36,58,47,.05);
+    opacity:0;transform:translateY(16px);animation:rise .6s ease forwards;}
+  @keyframes rise{to{opacity:1;transform:none;}}
+  .layer .lhead{display:flex;align-items:center;gap:11px;margin-bottom:13px;}
+  .layer .lnum{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;
+    background:#2F4A3C;color:#F4F1EA;font-family:'Fraunces',serif;font-weight:600;font-size:14px;}
+  .layer .lt{font-family:'Fraunces',serif;font-weight:600;font-size:18px;}
+  .layer .ld{font-weight:500;font-size:12px;color:#9A9A8C;margin-left:auto;text-align:right;max-width:46%;}
+
+  .nodes{display:flex;flex-wrap:wrap;gap:8px;}
+  .node{padding:9px 13px;border-radius:12px;font-weight:600;font-size:12.5px;
+    background:rgba(94,130,104,.10);color:#3A5A47;border:1px solid rgba(94,130,104,.18);}
+  .node.rt{background:rgba(192,138,90,.12);color:#9C5F38;border-color:rgba(192,138,90,.25);}
+  .node small{display:block;font-weight:500;font-size:10px;color:#9A9A8C;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+  .group-label{width:100%;font-weight:700;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;
+    color:#A9A99B;margin:8px 0 2px;}
+
+  .connector{height:34px;width:2px;background:linear-gradient(#5E8268,#5E8268);position:relative;}
+  .connector::after{content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);
+    border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #5E8268;}
+  .connector.rt{background:#C08A5A;}
+  .connector.rt::after{border-top-color:#C08A5A;}
+  .connector .clab{position:absolute;left:14px;top:50%;transform:translateY(-50%);white-space:nowrap;
+    font-weight:600;font-size:11px;color:#7C9885;}
+  .connector.rt .clab{color:#B07346;}
+
+  .notes{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .note{background:#FBFAF6;border-radius:16px;padding:15px 16px;border:1px solid rgba(42,42,36,.06);}
+  .note b{font-family:'Fraunces',serif;font-weight:600;font-size:14px;display:block;margin-bottom:5px;color:#2F4A3C;}
+  .note p{font-weight:500;font-size:12.5px;color:#6B6B5E;line-height:1.5;}
+  @media(max-width:560px){.notes{grid-template-columns:1fr;}.layer .ld{max-width:40%;}}
+</style>
+</head>
+<body>
+<svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#g)" opacity="0.025"/></svg>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">System Architecture · v1</div>
+    <h1>How the data becomes a calm experience</h1>
+    <p class="lede">The core principle: <b>ingest and pre-compute offline</b>, then <b>apply each user's weights at request time</b>. Heavy geospatial work never touches the live request, so every screen feels instant.</p>
+    <div class="legend">
+      <span><i class="l-bg"></i>Background pipeline · scheduled</span>
+      <span><i class="l-rt"></i>Request-time · live & personal</span>
+    </div>
+  </header>
+
+  <div class="flow" id="flow">
+
+    <div class="layer" style="animation-delay:.0s">
+      <div class="lhead"><span class="lnum">1</span><span class="lt">External data sources</span><span class="ld">Free/global tier + paid market tier</span></div>
+      <div class="nodes">
+        <div class="group-label">Environment &amp; climate</div>
+        <div class="node">NASA POWER<small>weather · daily</small></div>
+        <div class="node">NASA LANCE<small>flood · daily+archive</small></div>
+        <div class="node">Copernicus<small>SAR flood</small></div>
+        <div class="node">SEDAC / DEM<small>hazard · elevation</small></div>
+        <div class="group-label">Amenities &amp; air</div>
+        <div class="node">OSM / Geofabrik<small>POIs · ~daily</small></div>
+        <div class="node">OpenAQ<small>air quality</small></div>
+        <div class="group-label">Safety &amp; market</div>
+        <div class="node">ACLED / Numbeo<small>safety · weekly</small></div>
+        <div class="node">Listings / Estate Intel<small>price</small></div>
+      </div>
+    </div>
+
+    <div class="connector"><span class="clab">pull on schedule</span></div>
+
+    <div class="layer" style="animation-delay:.1s">
+      <div class="lhead"><span class="lnum">2</span><span class="lt">Ingestion pipeline</span><span class="ld">Scheduled workers · one adapter per source</span></div>
+      <div class="nodes">
+        <div class="node">Source adapters<small>fetch · auth · retry</small></div>
+        <div class="node">Geo-normalizer<small>align to grid/H3 cells</small></div>
+        <div class="node">Raster → cell aggregation<small>flood · climate</small></div>
+        <div class="node">Geocoding<small>Nominatim / OpenCage</small></div>
+        <div class="node">Quality &amp; source-tier tagging</div>
+      </div>
+    </div>
+
+    <div class="connector"><span class="clab">write normalized layers</span></div>
+
+    <div class="layer" style="animation-delay:.2s">
+      <div class="lhead"><span class="lnum">3</span><span class="lt">Geospatial data store</span><span class="ld">Source of truth for the app</span></div>
+      <div class="nodes">
+        <div class="node">PostGIS<small>raw + normalized layers</small></div>
+        <div class="node">Pre-computed sub-scores<small>per cell · per layer</small></div>
+        <div class="node">Confidence &amp; source tier<small>per value</small></div>
+        <div class="node">Object storage<small>tiles · imagery</small></div>
+      </div>
+    </div>
+
+    <div class="connector"><span class="clab">offline sub-score job</span></div>
+
+    <div class="layer" style="animation-delay:.3s">
+      <div class="lhead"><span class="lnum">4</span><span class="lt">Scoring engine</span><span class="ld">Implements the normalization spec</span></div>
+      <div class="nodes">
+        <div class="node">Sub-score normalizers<small>flood · distance · price…</small></div>
+        <div class="node rt">Weighted aggregator<small>applies user weights</small></div>
+        <div class="node rt">Hard-filter pass<small>deal-breakers</small></div>
+        <div class="node rt">Missing-data + confidence<small>renormalize</small></div>
+      </div>
+    </div>
+
+    <div class="connector rt"><span class="clab">Fit Score on the fly</span></div>
+
+    <div class="layer" style="animation-delay:.4s">
+      <div class="lhead"><span class="lnum">5</span><span class="lt">API layer</span><span class="ld">Stateless · cached</span></div>
+      <div class="nodes">
+        <div class="node rt">Properties &amp; search</div>
+        <div class="node rt">Score &amp; explain</div>
+        <div class="node rt">Comparison</div>
+        <div class="node rt">Profile &amp; weights</div>
+        <div class="node">Cache layer<small>Redis · hot areas</small></div>
+      </div>
+    </div>
+
+    <div class="connector rt"><span class="clab">JSON · personalized</span></div>
+
+    <div class="layer" style="animation-delay:.5s">
+      <div class="lhead"><span class="lnum">6</span><span class="lt">Client apps</span><span class="ld">Mobile + web · the calm surface</span></div>
+      <div class="nodes">
+        <div class="node rt">Onboarding / priorities<small>sets the weights ↑</small></div>
+        <div class="node rt">Discovery (map + list)</div>
+        <div class="node rt">Property profile</div>
+        <div class="node rt">Comparison view</div>
+        <div class="node rt">Saved &amp; alerts</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>Why precompute?</b><p>Flood and climate data are heavy rasters. Aggregating them into cells once — not per request — is what keeps the app fast enough to feel calm.</p></div>
+    <div class="note"><b>Weights stay personal</b><p>Sub-scores are universal and cached; only the weighted aggregation runs per user. The same property scores differently for different people, cheaply.</p></div>
+    <div class="note"><b>Confidence travels with data</b><p>Every cached value carries its source tier and confidence, so the UI can stay honest about Nigeria's uneven coverage without extra lookups.</p></div>
+    <div class="note"><b>Built to scale out</b><p>New country = new source adapters + regional thresholds. Layers 3–6 don't change, so global expansion is mostly a Layer 1–2 effort.</p></div>
+  </div>
+</div>
+</body>
+</html>

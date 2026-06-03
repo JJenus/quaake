@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Set Your Priorities</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#F4F1EA;font-family:'Hanken Grotesk',sans-serif;display:flex;
+    justify-content:center;min-height:100vh;color:#2A2A24;}
+  .grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5;mix-blend-mode:multiply;z-index:1;}
+  .phone{width:100%;max-width:430px;background:#F4F1EA;position:relative;min-height:100vh;
+    box-shadow:0 0 80px rgba(42,42,36,.08);display:flex;flex-direction:column;overflow-x:hidden;}
+
+  /* progress */
+  .prog{display:flex;gap:6px;padding:54px 24px 0;}
+  .prog .seg{flex:1;height:4px;border-radius:9px;background:rgba(42,42,36,.10);overflow:hidden;}
+  .prog .seg .fill{height:100%;width:0;background:#5E8268;border-radius:9px;transition:width .4s ease;}
+
+  /* step container */
+  .steps{flex:1;position:relative;}
+  .step{position:absolute;inset:0;padding:28px 24px 0;display:none;}
+  .step.active{display:block;animation:fade .5s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+  .eyebrow{font-weight:600;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#7C9885;}
+  .step h1{font-family:'Fraunces',serif;font-weight:500;font-size:30px;letter-spacing:-.5px;
+    margin:8px 0 6px;line-height:1.1;}
+  .step .lede{font-weight:500;font-size:14.5px;color:#6B6B5E;line-height:1.5;margin-bottom:22px;}
+
+  /* welcome */
+  .welcome{display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;height:70vh;padding:0 30px;}
+  .welcome .mark{width:88px;height:88px;border-radius:28px;display:grid;place-items:center;
+    background:linear-gradient(155deg,#3A5A47,#2F4A3C);margin-bottom:28px;
+    box-shadow:0 14px 36px rgba(36,58,47,.22);}
+  .welcome h1{font-size:34px;}
+  .welcome .lede{font-size:15.5px;max-width:300px;}
+
+  /* segmented toggle */
+  .seg-toggle{display:flex;background:rgba(42,42,36,.05);border-radius:14px;padding:4px;margin-bottom:20px;}
+  .seg-toggle button{flex:1;border:none;background:none;padding:11px;border-radius:11px;cursor:pointer;
+    font-weight:600;font-size:14px;color:#8A8578;transition:all .25s ease;}
+  .seg-toggle button.on{background:#FBFAF6;color:#2F4A3C;box-shadow:0 1px 4px rgba(42,42,36,.08);}
+
+  .field{margin-bottom:20px;}
+  .field label{display:block;font-weight:600;font-size:13px;color:#4A4A40;margin-bottom:9px;}
+  .field input[type=text]{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(42,42,36,.10);
+    background:#FBFAF6;font:500 15px 'Hanken Grotesk';color:#2A2A24;}
+  .field input[type=text]:focus{outline:none;border-color:#7C9885;}
+  .budget-val{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:#2F4A3C;}
+
+  input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:9px;
+    background:rgba(94,130,104,.2);margin-top:12px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:#5E8268;border:3px solid #FBFAF6;box-shadow:0 2px 6px rgba(36,58,47,.25);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#5E8268;
+    border:3px solid #FBFAF6;cursor:pointer;}
+
+  /* choose grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .chip{display:flex;align-items:center;gap:11px;padding:15px 14px;border-radius:16px;
+    background:#FBFAF6;border:1.5px solid rgba(42,42,36,.07);cursor:pointer;transition:all .2s ease;}
+  .chip .ci{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex-shrink:0;
+    background:rgba(94,130,104,.10);color:#3A5A47;transition:all .2s ease;}
+  .chip .cl{font-weight:600;font-size:13.5px;color:#4A4A40;}
+  .chip.sel{border-color:#5E8268;background:rgba(94,130,104,.08);}
+  .chip.sel .ci{background:#5E8268;color:#fff;}
+  .pick-note{text-align:center;font-weight:500;font-size:12.5px;color:#9A9A8C;margin-top:16px;}
+
+  /* weight step */
+  .radar-mini{height:230px;margin:0 -10px 6px;}
+  .sliders{display:flex;flex-direction:column;gap:16px;}
+  .srow .stop{display:flex;align-items:center;gap:9px;margin-bottom:2px;}
+  .srow .stop .sl{flex:1;font-weight:600;font-size:13.5px;color:#4A4A40;}
+  .srow .stop .sv{font-weight:600;font-size:12px;color:#7C9885;}
+  .srow .stop .sdot{width:9px;height:9px;border-radius:9px;background:#5E8268;}
+
+  /* deal-breakers */
+  .switch-row{display:flex;align-items:center;gap:13px;padding:16px 16px;border-radius:16px;
+    background:#FBFAF6;border:1px solid rgba(42,42,36,.06);margin-bottom:11px;}
+  .switch-row .sri{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(94,130,104,.10);color:#3A5A47;flex-shrink:0;}
+  .switch-row .srt{flex:1;}
+  .switch-row .srt b{display:block;font-weight:600;font-size:14px;color:#2A2A24;}
+  .switch-row .srt span{font-weight:500;font-size:11.5px;color:#9A9A8C;}
+  .toggle{width:48px;height:28px;border-radius:99px;background:rgba(42,42,36,.14);position:relative;
+    cursor:pointer;flex-shrink:0;transition:background .25s ease;}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+    background:#fff;transition:transform .25s ease;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .toggle.on{background:#5E8268;} .toggle.on::after{transform:translateX(20px);}
+
+  /* final */
+  .final{display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .final .radar-box{height:260px;width:100%;margin:4px 0;}
+  .final .toppri{font-weight:500;font-size:14px;color:#6B6B5E;line-height:1.5;max-width:300px;}
+  .final .toppri b{color:#2F4A3C;font-weight:700;}
+  .ready-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;
+    background:rgba(94,130,104,.12);font-weight:600;font-size:12px;color:#5E8268;margin-bottom:6px;}
+
+  /* nav */
+  .nav{padding:16px 24px calc(20px + env(safe-area-inset-bottom));display:flex;gap:12px;align-items:center;}
+  .nav .back{width:54px;height:54px;border-radius:16px;border:1px solid rgba(42,42,36,.10);
+    background:#FBFAF6;cursor:pointer;display:grid;place-items:center;color:#6B6B5E;}
+  .nav .back.hidden{display:none;}
+  .nav .primary{flex:1;height:54px;border-radius:16px;border:none;cursor:pointer;
+    background:#2F4A3C;color:#F4F1EA;font-weight:600;font-size:15.5px;transition:all .25s ease;}
+  .nav .primary:disabled{background:rgba(42,42,36,.14);color:rgba(42,42,36,.4);cursor:default;}
+  svg.ic{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+</style>
+</head>
+<body>
+<svg class="grain"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#g)" opacity="0.025"/></svg>
+
+<div class="phone">
+  <div class="prog" id="prog"></div>
+
+  <div class="steps" id="steps">
+
+    <!-- 0 WELCOME -->
+    <section class="step" data-i="0">
+      <div class="welcome">
+        <div class="mark"><svg class="ic" width="40" height="40" stroke="#E4D7C2" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></div>
+        <h1>Find where you'll thrive</h1>
+        <p class="lede">Don't just find a house — understand the life around it. Tell us what matters, and we'll score every place for <i>you</i>.</p>
+      </div>
+    </section>
+
+    <!-- 1 INTENT & LOCATION -->
+    <section class="step" data-i="1">
+      <div class="eyebrow">Step 1</div>
+      <h1>Where are you looking?</h1>
+      <p class="lede">A few basics so we can find the right places.</p>
+      <div class="seg-toggle" id="intent">
+        <button class="on" data-v="buy">Buy</button>
+        <button data-v="rent">Rent</button>
+      </div>
+      <div class="field">
+        <label>City or area</label>
+        <input type="text" id="loc" placeholder="e.g. Lekki, Lagos" value="Lagos" />
+      </div>
+      <div class="field">
+        <label>Budget ceiling</label>
+        <div class="budget-val">₦<span id="bval">80</span>M</div>
+        <input type="range" id="budget" min="10" max="300" value="80" step="5" />
+      </div>
+    </section>
+
+    <!-- 2 CHOOSE -->
+    <section class="step" data-i="2">
+      <div class="eyebrow">Step 2</div>
+      <h1>What matters to you?</h1>
+      <p class="lede">Pick the things that shape a good life here. Choose at least three.</p>
+      <div class="grid" id="grid"></div>
+      <div class="pick-note" id="picknote">Select at least 3</div>
+    </section>
+
+    <!-- 3 WEIGHT -->
+    <section class="step" data-i="3">
+      <div class="eyebrow">Step 3</div>
+      <h1>How much does each matter?</h1>
+      <p class="lede">Drag to set the balance. Your profile reshapes as you go.</p>
+      <div class="radar-mini"><svg id="wradar" viewBox="0 0 300 300" width="100%" height="100%"></svg></div>
+      <div class="sliders" id="sliders"></div>
+    </section>
+
+    <!-- 4 DEAL-BREAKERS -->
+    <section class="step" data-i="4">
+      <div class="eyebrow">Step 4 · optional</div>
+      <h1>Any deal-breakers?</h1>
+      <p class="lede">These remove places that don't qualify — separate from your preferences.</p>
+      <div id="breakers"></div>
+    </section>
+
+    <!-- 5 FINAL -->
+    <section class="step" data-i="5">
+      <div class="final">
+        <div class="ready-badge"><svg class="ic" width="13" height="13" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg>Profile ready</div>
+        <h1>This is your home-fit profile</h1>
+        <div class="radar-box"><svg id="fradar" viewBox="0 0 300 300" width="100%" height="100%"></svg></div>
+        <p class="toppri" id="toppri"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="nav">
+    <button class="back hidden" id="back"><svg class="ic" width="20" height="20" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="primary" id="primary">Begin</button>
+  </div>
+</div>
+
+<script>
+/* ---------- dimensions ---------- */
+const ICONS={
+  flood:'<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z"/>',
+  school:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/>',
+  price:'<path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M16 12h.01"/>',
+  faith:'<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+  air:'<path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/>',
+  safety:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+  market:'<path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.6-7.4"/>',
+  hospital:'<path d="M4 3v6a4 4 0 0 0 8 0V3"/><circle cx="18" cy="15" r="3"/><path d="M12 13a6 6 0 0 0 6 2"/>',
+  transit:'<path d="M4 16V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><path d="M4 11h16"/><circle cx="7.5" cy="16" r="1.2"/><circle cx="16.5" cy="16" r="1.2"/>',
+  park:'<path d="M12 22v-5"/><path d="M9 17a4.5 4.5 0 0 1-1-8.6A4.5 4.5 0 0 1 16.5 7 4.2 4.2 0 0 1 15 17z"/>'
+};
+const DIMS=[
+  {k:"flood",l:"Flood safety"},{k:"school",l:"Schools"},{k:"price",l:"Affordability"},
+  {k:"faith",l:"Worship"},{k:"air",l:"Air quality"},{k:"safety",l:"Safety"},
+  {k:"market",l:"Markets"},{k:"hospital",l:"Hospital"},{k:"transit",l:"Transit"},{k:"park",l:"Parks"}
+];
+const DMAP=Object.fromEntries(DIMS.map(d=>[d.k,d.l]));
+const ic=(k,sz=20,color="currentColor")=>`<svg class="ic" style="width:${sz}px;height:${sz}px;stroke:${color}" viewBox="0 0 24 24">${ICONS[k]}</svg>`;
+
+/* ---------- state ---------- */
+const state={intent:"buy",loc:"Lagos",budget:80,selected:[],weights:{}};
+
+/* ---------- progress ---------- */
+const TOTAL=6;
+const progEl=document.getElementById("prog");
+progEl.innerHTML=Array.from({length:TOTAL}).map(()=>`<div class="seg"><div class="fill"></div></div>`).join("");
+const fills=[...progEl.querySelectorAll(".fill")];
+
+/* ---------- intent toggle ---------- */
+document.querySelectorAll("#intent button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#intent button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); state.intent=b.dataset.v;
+}));
+document.getElementById("loc").addEventListener("input",e=>state.loc=e.target.value);
+const budget=document.getElementById("budget"), bval=document.getElementById("bval");
+budget.addEventListener("input",()=>{state.budget=+budget.value;bval.textContent=budget.value;});
+
+/* ---------- choose grid ---------- */
+const grid=document.getElementById("grid"), picknote=document.getElementById("picknote");
+grid.innerHTML=DIMS.map(d=>`<div class="chip" data-k="${d.k}"><span class="ci">${ic(d.k,18)}</span><span class="cl">${d.l}</span></div>`).join("");
+grid.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+  const k=c.dataset.k, idx=state.selected.indexOf(k);
+  if(idx>=0){state.selected.splice(idx,1);c.classList.remove("sel");delete state.weights[k];}
+  else{state.selected.push(k);c.classList.add("sel");state.weights[k]=55;}
+  const ok=state.selected.length>=3;
+  picknote.textContent = ok?`${state.selected.length} selected`:`Select at least 3 · ${state.selected.length} chosen`;
+  picknote.style.color = ok?"#5E8268":"#9A9A8C";
+  updatePrimary();
+}));
+
+/* ---------- generic radar ---------- */
+function drawRadar(svg,keys,prog){
+  const cx=150,cy=150,maxR=100,n=keys.length;
+  const ang=i=>(-90+i*360/n)*Math.PI/180;
+  const pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];
+  const ring=f=>keys.map((_,i)=>pt(i,maxR*f).join(",")).join(" ");
+  let s="";
+  [0.33,0.66,1].forEach(f=>s+=`<polygon points="${ring(f)}" fill="none" stroke="rgba(47,74,60,.10)" stroke-width="1"/>`);
+  keys.forEach((_,i)=>{const[x,y]=pt(i,maxR);s+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(47,74,60,.10)" stroke-width="1"/>`;});
+  const data=keys.map((k,i)=>pt(i,maxR*(state.weights[k]/100)*prog).join(",")).join(" ");
+  s+=`<polygon points="${data}" fill="rgba(94,130,104,.22)" stroke="#5E8268" stroke-width="2.4" stroke-linejoin="round"/>`;
+  keys.forEach((k,i)=>{const[x,y]=pt(i,maxR*(state.weights[k]/100)*prog);s+=`<circle cx="${x}" cy="${y}" r="4" fill="#5E8268" stroke="#FBFAF6" stroke-width="2"/>`;});
+  keys.forEach((k,i)=>{const[x,y]=pt(i,maxR+24);s+=`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" style="font:600 10px 'Hanken Grotesk',sans-serif;fill:#6B6B5E">${DMAP[k]}</text>`;});
+  svg.innerHTML=s;
+}
+function animRadar(svg,keys){
+  const dur=800,start=performance.now();
+  function tick(now){const t=Math.min(1,(now-start)/dur);drawRadar(svg,keys,1-Math.pow(1-t,3));if(t<1)requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+}
+
+/* ---------- weight sliders ---------- */
+function buildWeightStep(){
+  const wradar=document.getElementById("wradar");
+  const sliders=document.getElementById("sliders");
+  sliders.innerHTML=state.selected.map(k=>`
+    <div class="srow" data-k="${k}">
+      <div class="stop"><span class="sdot"></span><span class="sl">${DMAP[k]}</span><span class="sv" id="sv-${k}">balanced</span></div>
+      <input type="range" min="10" max="100" step="5" value="${state.weights[k]}" data-k="${k}">
+    </div>`).join("");
+  sliders.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{
+    const k=inp.dataset.k; state.weights[k]=+inp.value;
+    document.getElementById("sv-"+k).textContent = inp.value>=80?"very important":inp.value>=55?"important":inp.value>=30?"balanced":"minor";
+    drawRadar(wradar,state.selected,1);
+  }));
+  animRadar(wradar,state.selected);
+}
+
+/* ---------- deal-breakers ---------- */
+const BREAKERS=[
+  {k:"budget",icon:"price",t:"Stay within budget",s:"Hide places above your ceiling"},
+  {k:"flood",icon:"flood",t:"Low flood risk only",s:"Exclude frequently-flooding areas"},
+  {k:"hospital",icon:"hospital",t:"Hospital within 15 km",s:"Require nearby emergency care"},
+];
+const breakersEl=document.getElementById("breakers");
+breakersEl.innerHTML=BREAKERS.map(b=>`
+  <div class="switch-row"><span class="sri">${ic(b.icon,18)}</span>
+    <span class="srt"><b>${b.t}</b><span>${b.s}</span></span>
+    <span class="toggle" data-k="${b.k}"></span></div>`).join("");
+breakersEl.querySelectorAll(".toggle").forEach(t=>t.addEventListener("click",()=>t.classList.toggle("on")));
+
+/* ---------- final ---------- */
+function buildFinal(){
+  const top=[...state.selected].sort((a,b)=>state.weights[b]-state.weights[a]).slice(0,2).map(k=>DMAP[k]);
+  document.getElementById("toppri").innerHTML=`We'll weight matches most toward <b>${top.join("</b> and <b>")}</b>. You can adjust this anytime.`;
+  animRadar(document.getElementById("fradar"),state.selected);
+}
+
+/* ---------- step machine ---------- */
+let step=0;
+const steps=[...document.querySelectorAll(".step")];
+const backBtn=document.getElementById("back"), primary=document.getElementById("primary");
+const LABELS=["Begin","Continue","Continue","Continue","Continue","See matches"];
+
+function updatePrimary(){
+  primary.textContent=LABELS[step];
+  primary.disabled = (step===2 && state.selected.length<3);
+}
+function goTo(n){
+  step=Math.max(0,Math.min(TOTAL-1,n));
+  steps.forEach(s=>s.classList.toggle("active",+s.dataset.i===step));
+  fills.forEach((f,i)=>f.style.width = i<=step?"100%":"0");
+  backBtn.classList.toggle("hidden",step===0);
+  if(step===3) buildWeightStep();
+  if(step===5) buildFinal();
+  updatePrimary();
+}
+primary.addEventListener("click",()=>{
+  if(step===5){ primary.textContent="Loading matches…"; return; }
+  goTo(step+1);
+});
+backBtn.addEventListener("click",()=>goTo(step-1));
+
+goTo(0);
+</script>
+</body>
+</html>
