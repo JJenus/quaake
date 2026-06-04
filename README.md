@@ -64,12 +64,38 @@ curl -s localhost:8080/api/v1/score/demo -H 'Content-Type: application/json' -d 
 ## What's real vs. stubbed
 - **Real:** module structure + boundary test, all Flyway migrations (full schema), the scoring
   primitives + every normalizer + the weighted aggregator (verified by `ScoringSmokeTest`).
-- **Stubbed / next:** JPA read-model entities over `ingest.*`, the production endpoints
-  (`/properties/search`, `/properties/{id}`, `/fit`), the source adapters, and the
-  sub-score compute job body.
+  **Vertical slice (v0.2.0):** OSM amenity ingestion (`ingestion/`: Overpass client, tag mapper,
+  proximity computer, sub-score compute service) → `ingest.cell_proximity` + `ingest.cell_subscore`;
+  the read model (`api/readmodel`) and the two endpoints below.
+- **Stubbed / next:** more sources (NASA climate/flood, ACLED safety), `/properties/search`,
+  auth + `me/*`, agent listing submission.
+
+## Endpoints (v0.2.0)
+- `GET  /api/v1/properties/{id}` — universal layered property view (risk/daily-life/livability/cost).
+- `POST /api/v1/properties/{id}/fit` — personalized Fit Score; body is the scoring context:
+  ```json
+  {"weights":[{"dimension":"flood","weight":0.3},{"dimension":"schools","weight":0.25},
+              {"dimension":"affordability","weight":0.2},{"dimension":"worship","weight":0.15},
+              {"dimension":"air_quality","weight":0.1}],
+   "budget":{"amount":100000000,"currency":"NGN"}}
+  ```
+- `POST /api/v1/score/demo` — the engine demo from the skeleton (no DB).
+
+## Running ingestion
+Under the `worker` profile the `SubScoreComputeJob` ingests the configured OSM bounding box
+(`homefit.ingestion.osm.bbox.*`, default a Lekki/Lagos box) and recomputes sub-scores:
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=worker
+```
+
+## NOTE on verification
+This slice was written without a local build (no Maven Central access in the authoring
+environment). **Run `mvn -U clean verify` locally**; the integration test (`VerticalSliceIT`)
+needs Docker (Testcontainers PostGIS) or a local PostGIS at `localhost:5432/homefit`. Expect to
+fix minor issues on first compile.
 
 ## Next step — one vertical data slice
 Ingest NASA POWER + a flood layer + OSM amenities for one Lagos region, aggregate to H3 cells,
 run the normalizers, populate `ingest.cell_subscore`, then back the API endpoints with it.
 
-See the full design blueprint on the `main` branch (`design-blueprint/`).
+See the design blueprint (`homefit-design-blueprint.zip`) for the full specs.

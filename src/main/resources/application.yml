@@ -2,7 +2,7 @@ spring:
   application:
     name: homefit
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/homefit}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/homefit?stringtype=unspecified}
     username: ${DB_USER:homefit}
     password: ${DB_PASSWORD:homefit}
   jpa:

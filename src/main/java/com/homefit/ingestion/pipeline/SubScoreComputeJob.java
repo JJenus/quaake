@@ -1,5 +1,7 @@
 package com.homefit.ingestion.pipeline;
 
+import com.homefit.ingestion.adapter.OsmAmenityAdapter;
+import com.homefit.ingestion.compute.SubScoreComputeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
@@ -7,9 +9,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Offline job: read raw observations, run core's sub-score normalizers, write ingest.cell_subscore,
- * then refresh the cell_profile materialized view. Activates only under the "worker" profile
- * (Stage 1 of the deployment topology) — stub for now.
+ * Offline pipeline (worker profile): ingest the configured OSM box, then recompute sub-scores
+ * for its cells and refresh the cell_profile view. Stage 1 of the deployment topology.
  */
 @Component
 @Profile("worker")
@@ -17,11 +18,19 @@ public class SubScoreComputeJob {
 
     private static final Logger log = LoggerFactory.getLogger(SubScoreComputeJob.class);
 
+    private final OsmAmenityAdapter osm;
+    private final SubScoreComputeService compute;
+
+    public SubScoreComputeJob(OsmAmenityAdapter osm, SubScoreComputeService compute) {
+        this.osm = osm;
+        this.compute = compute;
+    }
+
     @Scheduled(cron = "${homefit.ingestion.subscore-cron:0 0 3 * * *}")
-    public void recomputeSubScores() {
-        log.info("SubScoreComputeJob tick — TODO: read observations, run normalizers, upsert cell_subscore");
-        // Next step (vertical slice): for each cell with new data ->
-        //   FloodNormalizer/ProximityNormalizer/AirQualityNormalizer/... -> cell_subscore
-        //   then REFRESH MATERIALIZED VIEW CONCURRENTLY ingest.cell_profile
+    public void run() {
+        var bbox = osm.defaultBBox();
+        int amenities = osm.ingestBBox(bbox);
+        int subscores = compute.recompute(osm.cellsFor(bbox));
+        log.info("Pipeline complete: {} amenities ingested, {} sub-scores written", amenities, subscores);
     }
 }
