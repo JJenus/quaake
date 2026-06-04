@@ -2,14 +2,22 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
-    '@nuxt/ui'
+    '@nuxt/ui',
+    '@pinia/nuxt'
   ],
 
   devtools: {
     enabled: true
   },
 
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/tokens.css']
+  
+  runtimeConfig: {
+    public: {
+      // override with NUXT_PUBLIC_API_BASE at runtime
+      apiBase: 'http://localhost:8080',
+    },
+  },
 
   routeRules: {
     '/': { prerender: true }

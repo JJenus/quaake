@@ -1,0 +1,11 @@
+/* Design tokens — see design-blueprint/04-frontend/frontend-design-system.md */
+:root {
+  --paper:#F4F1EA; --surface:#FBFAF6; --forest:#2F4A3C; --green:#3A5A47;
+  --sage:#5E8268; --sage-soft:#7C9885; --clay:#C08A5A; --slate-blue:#6E8CA0;
+  --ink:#2A2A24; --ink-muted:#6B6B5E; --ink-faint:#9A9A8C;
+  --line:rgba(42,42,36,0.06); --radius-lg:22px; --radius-xl:28px;
+  --font-display:'Fraunces',Georgia,serif; --font-ui:'Hanken Grotesk',system-ui,sans-serif;
+}
+* { box-sizing:border-box; margin:0; }
+body { background:var(--paper); color:var(--ink); font-family:var(--font-ui); }
+@media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
